@@ -1,6 +1,7 @@
 <template>
   <v-app id="inspire">
-    <v-navigation-drawer
+
+     <v-navigation-drawer
       v-model="showSidebar"
       :clipped="$vuetify.breakpoint.lgAndUp"
       app
@@ -33,10 +34,11 @@
     >
       <v-app-bar-nav-icon @click.stop="showSidebar = !showSidebar"></v-app-bar-nav-icon>
       <v-toolbar-title
-        style="width: 300px"
         class="ml-0 pl-4"
       >
-        <span class="hidden-sm-and-down">Raça de Cães</span>
+        <span class="hidden-sm-and-down"><h3 style="display: inline">Dogs Breeds</h3> 
+          - Sistema de Listagem e Filtragem de Raça de Cães
+        </span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
     </v-app-bar>
@@ -62,26 +64,41 @@
                 ></v-progress-linear>
               </template>
           
-              <v-card-title>Listagem de Raça de cães</v-card-title>
+              <v-card-title class="justify-center"><h2>Listagem de Raça de Cães</h2></v-card-title>
           
-              <v-divider class="mx-4"></v-divider>
-
-
                <v-data-table
                 :headers="headers"
                 :items="breeds"
+                item-key="text"
                 :loading="loading"
                 loading-text="Carregando ..."
                 class="elevation-1"
-                disable-sort
+                :search="search"
+                :custom-filter="filterBreeds"
               >
-                <!-- <template v-slot:item.contabil="{ item }">
-                  <v-icon v-if="item.contabil">mdi-check</v-icon>
-                  <span v-else>-</span>
-                </template> -->
+                <template v-slot:top>
+                  <v-text-field
+                    v-model="search"
+                    label="Informe parte do nome da raça ou sub-raça para filtrar..."
+                    class="mx-4"
+                  ></v-text-field>
+                </template>
+
+                <template v-slot:item.photo="{ item }">
+                  <a :key="item.text" class="fancybox" :data-fancybox="`gallery_${item.text}`" :href="item.photo">
+                    <img :src="item.photo" :title="`Clique para ver a foto da raça ${item.text}`" 
+                      v-if="item.photo" />
+                  </a>
+                </template>
+
+                 <template v-slot:item.subBreeds="{ item }">
+                    <span v-if="item.subBreeds">{{ subBreeds }}</span>
+                    <v-icon v-else color="black" large>
+                      mdi-null
+                    </v-icon>
+                </template>
 
               </v-data-table>
-
           
               <v-card-actions>
                 <v-btn
@@ -113,39 +130,47 @@ export default {
   data: () => ({
     loading: false,
     showSidebar: null,
+    search: '',
     breeds: [],
     menuItems: [
       { icon: 'mdi-home', text: 'Home' },
     ],
     headers: [
+      { text: "Foto", value: "photo", align: "center", sortable: false, width: "120px" },
       { text: "Raça", value: "value", align: "left" },
-      { text: "Sub-raças", value: "subBreeds", align: "left" },
+      { text: "Sub-raças", value: "subBreeds", align: "center" },
     ]
   }),
   mounted() {
     this.loadBreeds();
-    console.log('ENV:', process.env.VUE_APP_BACKEND_BASE_URL);
   },
   methods: {
     async loadBreeds() {
+      this.loading = true;
+
       const { data: { message: items } } = await DogService.loadBreeds();
-      if (items) {
-        for(let breed in items) {
-          let subBreeds = items[breed];
-          // console.log('RAÇA:', breed, 'SUB-RAÇA:', items[breed]);
-          if (subBreeds.length > 0) {
-            subBreeds = subBreeds.map(subBreed => this.capitalizeFirstLetter(subBreed)).join(', ');
-          } else {
-            subBreeds = '-';
-          }
-          
-          breed = this.capitalizeFirstLetter(breed);
-          this.breeds.push({ text: breed, value: breed, subBreeds: subBreeds});
-        }
+      for(let breed in items) {
+        let subBreeds = items[breed];
+        subBreeds = subBreeds.length > 0 ? subBreeds.map(subBreed => this.capitalizeFirstLetter(subBreed)).join(', ') 
+            : null ;
+        
+        breed = this.capitalizeFirstLetter(breed);
+        const photo = await this.loadBreedRandomImage(breed);
+        this.breeds.push({ text: breed, value: breed, subBreeds: subBreeds, photo: photo});
       }
 
-      console.log('DATA:',  this.breeds);
-      
+      this.loading = false;
+    },
+    async loadBreedRandomImage(breed) {
+      const { data: { message: photoUrl } } = await DogService.loadBreedRandomImage(breed.toLowerCase());
+
+      return photoUrl; 
+    },
+    filterBreeds(value, search) {
+      return value != null 
+        && search != null 
+        && typeof value === 'string' 
+        && value.toString().toLowerCase().indexOf(search) !== -1
     }
   }
 };
@@ -159,5 +184,15 @@ export default {
     align-items: center;
     justify-content: center;
     background-color: #fff;
+  }
+
+  img {
+    width: 120px; 
+    height: 150px; 
+    margin: 15px 0;
+  }
+
+  img:hover {
+    border: 2px solid dodgerblue;
   }
 </style>

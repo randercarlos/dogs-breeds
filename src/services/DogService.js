@@ -10,11 +10,9 @@ class DogService {
 		return axios.get(`/breed/${breed}/list`);
 	}
 
-
-	loadRandomImageFromBreed(breed) {
+	loadBreedRandomImage(breed) {
 		return axios.get(`/breed/${breed}/images/random`);
 	}
-
 
 }
 
