@@ -9,7 +9,7 @@
         class="ml-0 pl-4"
       >
         <span class="hidden-sm-and-down"><h3 style="display: inline">Dogs Breeds</h3> 
-          - Sistema de Listagem e Filtragem de Raça Canina
+          - Sistema de Listagem e Filtragem de Raças Caninas
         </span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
